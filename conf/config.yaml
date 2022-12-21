@@ -1,0 +1,20 @@
+hydra:
+  run:
+    dir: outputs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
+
+method: 'scarf' # sl-only, semi-only, self-semi-sl
+
+data_name: 'mnist' # iris, wine, boston, mnist
+label_data_rate: 0.1
+self_epochs: 600
+semi_max_iter: 1000
+batch_size: 512
+test_batch_size: 1024
+c: 0.4  # Corruption probability for self-supervised learning
+k: 3  # Number of augmented samples
+alpha: 2.0  # Hyper-parameter to control the weights of feature and mask losses
+beta: 1 # Hyperparameter to control supervised and unsupervised losses
+temperature: 0.2
+early_stopping_patience: 60
+
+seed: 42
