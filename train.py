@@ -53,6 +53,44 @@ class Train:
         self.acc_results = []
         self.auc_results = []
 
+    def pretraining_scarf(self):
+        x = self.u_set.x.detach()
+        corruption = corruption_generator(x.shape, self.c)
+        corruption = corruption.to(x.device)
+        corruption, x_tilde = pretext_generator(corruption, x)
+
+        u_loader = DataLoader(CorruptionDataset(x, x_tilde, corruption), 512, shuffle=True)
+        for e in range(self.self_epochs):
+            with tqdm(u_loader, bar_format="{l_bar}{bar:20}{r_bar}{bar:-10b}") as pbar_epoch:
+                for positive_idx, data in enumerate(pbar_epoch):
+                    x, x_tilde, corruption = data
+                    x = x.to(self.device)
+                    x_tilde = x_tilde.to(self.device)
+                    corruption = corruption.to(self.device)
+                    self.opt_self.zero_grad()
+
+                    z_i, z_j, _ = self.scarf_self(x, x_tilde)
+                    negative_samples = negative_sample(x, positive_idx)
+                    negative_keys = torch.zeros_like(negative_samples)
+
+                    for num, x in enumerate(negative_samples):
+                        x = x.to(self.device)
+                        x = self.scarf_self.encoder(x)
+                        negative_keys[num] = x
+
+                    # loss = self.info_nce(z_i, z_j, negative_keys)
+                    contrastive_loss = self.info_nce(z_i, z_j)
+                    loss = contrastive_loss
+                    loss.backward()
+                    self.opt_self.step()
+                    pbar_epoch.set_description(f"epoch[{e + 1} / {self.self_epochs}]")
+                    pbar_epoch.set_postfix({'loss': loss.item(),
+                                            'contrastiveloss': contrastive_loss.item()})
+            if e < 10:
+                self.warmupscheduler.step()
+            else:
+                self.mainscheduler.step()
+
     def self_ul(self):
         x = self.u_set.x.detach()
         corruption = corruption_generator(x.shape, self.c)

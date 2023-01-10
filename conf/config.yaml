@@ -5,7 +5,7 @@ hydra:
     dir: outputs/multirun/${hydra.job.name}/${data_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
 
-method: 'scarf' # sl-only, semi-only, self-semi-sl
+method: 'scarf' # scarf, original(my proposal method)
 
 data_name: 'mnist' # iris, wine, boston, mnist
 label_data_rate: 0.1

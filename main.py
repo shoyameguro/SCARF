@@ -10,9 +10,10 @@ def main(config):
 
     t = Train(config)
     if config['method'] == 'scarf':
+        t.pretraining_scarf()
+        t.sl()
+    if config['method'] == 'original':
         t.self_ul()
-        # t.sl()
-
         t.semi_sl()
     t.test()
 
