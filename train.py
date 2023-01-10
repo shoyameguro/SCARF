@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 class Train:
     def __init__(self, config) -> None:
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.l_set, self.u_set, self.test_set = get_dataset(config['data_name'], config['label_data_rate'])
+        self.l_set, self.u_set, self.test_set = get_dataset(config)
         self.self_epochs = config['self_epochs']
         self.semi_max_iter = config['semi_max_iter']
         self.batch_size = config['batch_size']
