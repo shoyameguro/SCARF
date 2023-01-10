@@ -5,7 +5,7 @@ import optuna
 import torch
 
 from train import Train
-from utils import set_seed
+from utils import EarlyStopping, set_seed
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +16,17 @@ class HyparaSearch:
         self.direction = config['direction']
         self.n_trials = config['n_trials']
         self.train = Train(config)
+        self.patience = config['early_stopping_patience']
         optuna.logging.get_logger("optuna").addHandler(logging.FileHandler('optuna.log'))
 
     def objective(self, trial):
         self.train.alpha = trial.suggest_categorical('self.train.alpha', [1.0, 1.2, 1.4, 1.6, 1.8, 2.0])
         self.train.beta = trial.suggest_categorical('self.train.beta', [1.0, 1.2, 1.4, 1.6, 1.8, 2.0])
-        self.train.temperature = trial.suggest_categorical('self.train.temperature', [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+        self.train.temperature = trial.suggest_categorical('self.train.temperature', [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
         self.train.c = trial.suggest_categorical('self.train.c', [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7])
-        self.train.k = trial.suggest_int('self.train.k', 1, 4)
+        self.train.k = trial.suggest_int('self.train.k', 1, 5)
+        self.train.early_stopping = EarlyStopping(self.patience)
+        self.train.acc_results = []
 
         set_seed(self.seed)
         self.train.self_ul()
