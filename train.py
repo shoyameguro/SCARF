@@ -50,6 +50,8 @@ class Train:
         self.warmupscheduler = torch.optim.lr_scheduler.LambdaLR(self.opt_self, lambda epoch: (epoch+1)/10.0, verbose=False)
         self.mainscheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(self.opt_self, 500, eta_min=0.05, last_epoch=-1, verbose=False)
         self.early_stopping = EarlyStopping(patience=config['early_stopping_patience'])
+        self.acc_results = []
+        self.auc_results = []
 
     def self_ul(self):
         x = self.u_set.x.detach()
@@ -199,7 +201,6 @@ class Train:
 
     def test(self):
         test_loader = DataLoader(self.test_set, self.test_batch_size)
-        results = []
         with tqdm(test_loader, bar_format="{l_bar}{bar:20}{r_bar}{bar:-10b}") as pbar_epoch:
             for data in pbar_epoch:
                 with torch.no_grad():
@@ -208,5 +209,7 @@ class Train:
 
                     x = self.scarf_self.encoder(x)
                     pred = self.classification(x)
-                    results.append(perf_metric('acc', y.cpu().numpy(), pred.cpu().numpy()))
-        log.info(f'Performance: {100 * torch.tensor(results).mean()}')
+                    self.acc_results.append(perf_metric('acc', y.cpu().numpy(), pred.cpu().numpy()))
+                    self.auc_results.append(perf_metric('auc', y.cpu().numpy(), pred.cpu().numpy()))
+        log.info(f'Performance(acc): {100 * torch.tensor(self.acc_results).mean()}')
+        log.info(f'Performance(auc): {100 * torch.tensor(self.auc_results).mean()}')
