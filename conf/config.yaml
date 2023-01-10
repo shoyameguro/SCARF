@@ -5,9 +5,10 @@ hydra:
     dir: outputs/multirun/${hydra.job.name}/${data_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
 
-method: 'scarf' # scarf, original(my proposal method)
-
-data_name: 'mnist' # iris, wine, boston, mnist
+method: 'original' # scarf, original(my proposal method)
+data_dir: /home/shoya/project/SCARF/dataset
+scalar: standard
+data_name: 'income' # iris, wine, boston, mnist
 label_data_rate: 0.1
 self_epochs: 10
 semi_max_iter: 1000

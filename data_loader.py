@@ -1,10 +1,17 @@
+import os
+from typing import Union
+
 import numpy as np
 import pandas as pd
-from sklearn.datasets import load_iris, load_wine, load_boston
 import torch
 import torchvision
+from sklearn.datasets import load_boston, load_iris, load_wine
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import Dataset
+
+from utils import (categorical2onehot_sklearn, mode_missing_feature,
+                   remove_missing_feature)
 
 income_columns = ['age', 'workclass', 'fnlwgt', 'education',
                   'education-num', 'marital-status', 'occupation',
@@ -42,11 +49,14 @@ class CorruptionDataset(Dataset):
         return self.x[index], self.x_tilde[index], self.corruption[index]
 
 
-def read_csv(path, label, columns, header=None):
+def read_csv(path, label=None, columns=None, missing_fn=None, header=None) -> Union[pd.DataFrame, pd.DataFrame]:
     df = pd.read_csv(path, header=header, names=columns)
-    x = df.drop(label, axis=1)
-    y = pd.get_dummies(df[label])
-    return x.to_numpy(), y.to_numpy()
+    if missing_fn is not None:
+        df = missing_fn(df)
+    if label is None:
+        label = len(df.columns) - 1
+    y = df.pop(label)
+    return df, y
 
 
 def mnist_to_tabular(x, y):
@@ -59,7 +69,7 @@ def mnist_to_tabular(x, y):
     return x, y
 
 
-def get_dataset(data_name, label_data_rate):
+def get_dataset(config):
     '''
     input:
         data_name: str
@@ -68,6 +78,11 @@ def get_dataset(data_name, label_data_rate):
         labeled dataset, unlabeled dataset, test dataset
         unlabeled dataset is a dataset that contains labels but is not used for training
     '''
+    data_name = config['data_name']
+    label_data_rate = config['label_data_rate']
+    data_dir = config['data_dir']
+    scalar_name = config['scalar']
+    cate_num = 0
     if data_name == 'iris':
         data = load_iris()
         data.target = np.asarray(pd.get_dummies(data.target))
@@ -97,7 +112,28 @@ def get_dataset(data_name, label_data_rate):
         test_set = torchvision.datasets.MNIST('../../../data', train=False, download=True)
         x_train, y_train = mnist_to_tabular(train_set.data.numpy(), train_set.targets.numpy())
         x_test, y_test = mnist_to_tabular(test_set.data.numpy(), test_set.targets.numpy())
+    elif data_name == 'income':
+        missing_fn = remove_missing_feature
+        missing_fn = mode_missing_feature
+        missing_fn = None
+        x_train_df, y_train_df = read_csv(os.path.join(data_dir, 'income/train.csv'), 'income', income_columns, missing_fn=missing_fn)
+        x_test_df, y_test_df = read_csv(os.path.join(data_dir, 'income/test.csv'), 'income', income_columns, missing_fn=missing_fn)
+        x_train_df.pop('education-num')
+        x_test_df.pop('education-num')
+        # " <=50k.", ">50k." to " <=50k", ">50k"
+        y_test_df = pd.DataFrame([s.rstrip('.') for s in y_test_df.values])
+        x_train, y_train, x_test, y_test, cate_num = categorical2onehot_sklearn(x_train_df, y_train_df, x_test_df, y_test_df)
 
+    scalar = None
+    if scalar_name == 'minmax':
+        scalar = MinMaxScaler()
+    elif scalar_name == 'standard':
+        scalar = StandardScaler()
+
+    if scalar is not None:
+        scalar.fit(x_train[:, cate_num:])
+        x_train[:, cate_num:] = scalar.transform(x_train[:, cate_num:])
+        x_test[:, cate_num:] = scalar.transform(x_test[:, cate_num:])
     # Divide labeled and unlabeled data
     idx = np.random.permutation(len(y_train))
     # Label data : Unlabeled data = label_data_rate:(1-label_data_rate)
