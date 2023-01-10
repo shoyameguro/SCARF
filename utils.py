@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 def corruption_generator(shape, c):
-    """Generate mask vector.
+    """Generate corruption
 
     Args:
     - c: corruption rate
@@ -42,7 +42,7 @@ def pretext_generator(corruption, x):
 
     # Corrupt samples
     x_tilde = x * (1-corruption) + x_bar * corruption
-    # Define new mask matrix
+    # Define new corrupted matrix
     c_new = 1 * (x != x_tilde)
     return c_new.to(torch.float), x_tilde.to(torch.float)
 

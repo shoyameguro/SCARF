@@ -15,11 +15,11 @@ batch_size: 128
 test_batch_size: 1024
 c: 0.2  # Corruption probability for self-supervised learning
 k: 5  # Number of augmented samples
-alpha: 1.6  # Hyper-parameter to control the weights of feature and mask losses
+alpha: 1.6  # Hyper-parameter to control the weights of contrastive and reconstruction losses
 beta: 1.1 # Hyperparameter to control supervised and unsupervised losses
-temperature: 0.14
+temperature: 0.14 # Hyperparameter to control the weights of InfoNCE loss(contrastive loss)
 early_stopping_patience: 10
 
-direction: maximize
-n_trials: 30
+direction: maximize # maximize or minimize
+n_trials: 30 # Number of times to search hyperparameter by using optuna
 seed: 42
