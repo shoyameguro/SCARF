@@ -1,5 +1,7 @@
 # SCARF
 Implementation of ["SCARF: SELF-SUPERVISED CONTRASTIVE LEARNING USING RANDOM FEATURE CORRUPTION"](https://arxiv.org/pdf/2106.15147.pdf)
+![image](https://user-images.githubusercontent.com/103426158/211871622-babd425f-16cb-4329-af93-cfbf11dae2c4.png)
+
 
 ##  Code explanation
 1. data_loader.py
